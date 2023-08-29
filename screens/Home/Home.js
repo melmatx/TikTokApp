@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -13,13 +13,15 @@ import Video from 'react-native-video';
 import axios from 'axios';
 import {baseUrl} from '../../assets/baseUrl';
 import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {faPause} from '@fortawesome/free-solid-svg-icons';
 
 const {height, width} = Dimensions.get('window');
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
 
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -43,15 +45,11 @@ const Home = () => {
           console.log(err.request);
         }
       })
-      .finally(() => {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      });
+      .finally(() => setIsRefreshing(false));
   };
 
   return (
     <View style={style.mainContainer}>
-      {isLoading && <ActivityIndicator color={'white'} />}
       <FlatList
         keyExtractor={item => item.id}
         snapToInterval={height}
@@ -72,14 +70,25 @@ const Home = () => {
                 <Text style={style.descriptionText}>{item.description}</Text>
               )}
             </View>
-            <Video
-              source={{uri: item.uri}}
-              controls={true}
-              paused={true}
-              repeat={true}
-              resizeMode={'cover'}
-              style={style.video}
-            />
+            {isPaused && (
+              <View style={style.pausedContainer}>
+                <FontAwesomeIcon
+                  icon={faPause}
+                  size={50}
+                  color={'white'}
+                  style={style.pauseButton}
+                />
+              </View>
+            )}
+            <Pressable onPress={() => setIsPaused(!isPaused)}>
+              <Video
+                source={{uri: item.uri}}
+                paused={isPaused}
+                repeat={true}
+                resizeMode={'cover'}
+                style={style.video}
+              />
+            </Pressable>
           </View>
         )}
         refreshControl={
@@ -125,6 +134,18 @@ const style = StyleSheet.create({
   },
   descriptionText: {
     color: 'white',
+  },
+  pausedContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pauseButton: {
+    opacity: 0.8,
   },
   shadow: {
     shadowColor: 'black',
