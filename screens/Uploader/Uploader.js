@@ -5,6 +5,7 @@ import {
   Button,
   Platform,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +15,7 @@ import {globalStyles} from '../../assets/styles/globalStyles';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import {baseUrl} from '../../assets/baseUrl';
+import {useFocusEffect} from '@react-navigation/native';
 
 const Uploader = () => {
   const [title, setTitle] = useState('');
@@ -22,6 +24,10 @@ const Uploader = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Please wait...');
   const [errors, setErrors] = useState({});
+
+  useFocusEffect(() => {
+    StatusBar.setBarStyle('dark-content');
+  });
 
   useEffect(() => {
     if (videoFile) {
@@ -33,6 +39,10 @@ const Uploader = () => {
     setIsLoading(true);
     setLoadingMessage('Waiting for video...');
     Alert.alert('Video options', 'Choose an option:', [
+      {
+        text: 'Cancel',
+        onPress: () => setIsLoading(false),
+      },
       {
         text: 'Take a video now',
         onPress: () =>
@@ -48,10 +58,6 @@ const Uploader = () => {
             .then(file => setVideoFile(file.assets[0]))
             .catch(() => Alert.alert('Failed to pick from gallery.'))
             .finally(() => setIsLoading(false)),
-      },
-      {
-        text: 'Cancel',
-        onPress: () => setIsLoading(false),
       },
     ]);
   };
@@ -82,11 +88,10 @@ const Uploader = () => {
       .catch(err => {
         if (err.response) {
           setErrors(err.response.data.errors);
-          console.log(err.response);
-          console.log(err.response.data);
+          console.log('Response data: ', err.response.data);
         } else {
           Alert.alert(err.message);
-          console.log(err.request);
+          console.log('Error request: ', err.request);
         }
       })
       .finally(() => setIsLoading(false));
