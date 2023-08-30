@@ -65,7 +65,7 @@ const style = StyleSheet.create({
     position: 'absolute',
     margin: 20,
     marginHorizontal: 30,
-    marginBottom: 35,
+    marginBottom: 30,
     paddingBottom: 12,
     height: 75,
     justifyContent: 'center',
