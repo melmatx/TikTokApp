@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Alert,
   Dimensions,
   FlatList,
   Pressable,
   RefreshControl,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -15,15 +16,24 @@ import {baseUrl} from '../../assets/baseUrl';
 import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faPause} from '@fortawesome/free-solid-svg-icons';
+import {useFocusEffect} from '@react-navigation/native';
 
 const {height, width} = Dimensions.get('window');
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [currentPlayingId, setCurrentPlayingId] = useState(false);
 
   const tabBarHeight = useBottomTabBarHeight();
+
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle('light-content');
+
+      return () => setCurrentPlayingId(null);
+    }, []),
+  );
 
   useEffect(() => {
     fetchVideos();
@@ -48,6 +58,31 @@ const Home = () => {
       .finally(() => setIsRefreshing(false));
   };
 
+  const setCurrentlyPlaying = id => {
+    if (currentPlayingId !== id) {
+      setCurrentPlayingId(id);
+    } else {
+      setCurrentPlayingId(null);
+    }
+  };
+
+  const onViewableItemsChanged = useCallback(({viewableItems}) => {
+    if (viewableItems.length > 0) {
+      const firstViewableItem = viewableItems[0];
+      if (firstViewableItem.isViewable) {
+        setCurrentPlayingId(firstViewableItem.item.id);
+      }
+    }
+  }, []);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
+  };
+
+  const viewabilityConfigCallbackPairs = useRef([
+    {viewabilityConfig, onViewableItemsChanged},
+  ]);
+
   return (
     <View style={style.mainContainer}>
       <FlatList
@@ -55,6 +90,7 @@ const Home = () => {
         snapToInterval={height}
         snapToAlignment="start"
         decelerationRate="fast"
+        viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
         showsVerticalScrollIndicator={false}
         data={videos}
         renderItem={({item}) => (
@@ -62,32 +98,38 @@ const Home = () => {
             <View
               style={{
                 ...style.detailsContainer,
-                ...style.shadow,
                 bottom: tabBarHeight + 80,
               }}>
-              <Text style={style.titleText}>{item.title}</Text>
+              <Text style={{...style.titleText, ...style.shadow}}>
+                {item.title}
+              </Text>
               {item.description && (
-                <Text style={style.descriptionText}>{item.description}</Text>
+                <Text style={{...style.descriptionText, ...style.shadow}}>
+                  {item.description}
+                </Text>
               )}
             </View>
-            {isPaused && (
-              <View style={style.pausedContainer}>
-                <FontAwesomeIcon
-                  icon={faPause}
-                  size={50}
-                  color={'white'}
-                  style={style.pauseButton}
-                />
-              </View>
-            )}
-            <Pressable onPress={() => setIsPaused(!isPaused)}>
+            <Pressable
+              onPress={() => setCurrentlyPlaying(item.id)}
+              style={style.video}>
               <Video
                 source={{uri: item.uri}}
-                paused={isPaused}
+                onError={e => console.log(e)}
+                paused={item.id !== currentPlayingId}
                 repeat={true}
                 resizeMode={'cover'}
                 style={style.video}
               />
+              {item.id !== currentPlayingId && (
+                <View style={style.pausedContainer}>
+                  <FontAwesomeIcon
+                    icon={faPause}
+                    size={50}
+                    color={'white'}
+                    style={style.pauseButton}
+                  />
+                </View>
+              )}
             </Pressable>
           </View>
         )}
@@ -116,7 +158,6 @@ const style = StyleSheet.create({
   videoContentContainer: {
     height,
     width,
-    backgroundColor: 'red',
   },
   video: {
     flex: 1,
@@ -137,6 +178,7 @@ const style = StyleSheet.create({
   },
   pausedContainer: {
     position: 'absolute',
+    zIndex: 1,
     top: 0,
     bottom: 0,
     left: 0,
@@ -148,13 +190,12 @@ const style = StyleSheet.create({
     opacity: 0.8,
   },
   shadow: {
-    shadowColor: 'black',
     shadowOffset: {
-      width: 4,
-      height: 4,
+      width: 3,
+      height: 6,
     },
     shadowOpacity: 0.8,
-    shadowRadius: 4,
+    shadowRadius: 12,
     elevation: 5,
   },
   emptyTextContainer: {
