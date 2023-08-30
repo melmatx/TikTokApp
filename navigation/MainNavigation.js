@@ -9,6 +9,8 @@ import {faFileVideo as regularFileVideo} from '@fortawesome/free-regular-svg-ico
 import {faFileVideo as solidFileVideo} from '@fortawesome/free-solid-svg-icons';
 import {faCirclePlay as regularCirclePlay} from '@fortawesome/free-regular-svg-icons';
 import {faCirclePlay as solidCirclePlay} from '@fortawesome/free-solid-svg-icons';
+import {BlurView} from '@react-native-community/blur';
+import {StyleSheet} from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -28,19 +30,15 @@ const renderTabIcons = ({focused, color, size}, route) => {
   return <FontAwesomeIcon icon={icon} color={color} size={size} />;
 };
 
+const renderTabBarBackground = () => (
+  <BlurView blurType={'xlight'} style={style.tabBarBackground} />
+);
+
 const TabNavigation = () => (
   <Tabs.Navigator
     screenOptions={({route}) => ({
-      tabBarStyle: {
-        position: 'absolute',
-        margin: 20,
-        marginBottom: 35,
-        paddingBottom: 10,
-        borderRadius: 30,
-        height: 70,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
+      tabBarStyle: style.tabBar,
+      tabBarBackground: () => renderTabBarBackground(),
       tabBarIcon: props => renderTabIcons(props, route),
     })}>
     <Tabs.Screen
@@ -61,5 +59,23 @@ const MainNavigation = () => (
     <Stack.Screen name={'BottomTabs'} component={TabNavigation} />
   </Stack.Navigator>
 );
+
+const style = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    margin: 20,
+    marginHorizontal: 30,
+    marginBottom: 35,
+    paddingBottom: 12,
+    height: 75,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+  },
+  tabBarBackground: {
+    flex: 1,
+    borderRadius: 30,
+  },
+});
 
 export default MainNavigation;
