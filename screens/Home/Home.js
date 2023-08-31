@@ -23,7 +23,7 @@ const {height, width} = Dimensions.get('window');
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [currentPlayingId, setCurrentPlayingId] = useState(false);
+  const [currentPlayingId, setCurrentPlayingId] = useState(null);
 
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -166,6 +166,7 @@ const style = StyleSheet.create({
     position: 'absolute',
     zIndex: 1,
     left: 20,
+    marginRight: 50,
   },
   titleText: {
     color: 'white',
@@ -191,11 +192,11 @@ const style = StyleSheet.create({
   },
   shadow: {
     shadowOffset: {
-      width: 3,
-      height: 6,
+      width: 0,
+      height: 4,
     },
     shadowOpacity: 0.8,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 5,
   },
   emptyTextContainer: {
