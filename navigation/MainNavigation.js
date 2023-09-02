@@ -49,7 +49,7 @@ const TabNavigation = () => (
     <Tabs.Screen
       name={Routes.UPLOADER}
       component={Uploader}
-      options={{headerTitle: 'Upload New Video'}}
+      options={{title: 'Upload', headerTitle: 'Upload New Video'}}
     />
   </Tabs.Navigator>
 );
@@ -65,7 +65,7 @@ const style = StyleSheet.create({
     position: 'absolute',
     margin: 20,
     marginHorizontal: 30,
-    marginBottom: 30,
+    marginBottom: 35,
     paddingBottom: 12,
     height: 75,
     justifyContent: 'center',

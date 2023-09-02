@@ -3,48 +3,54 @@ import {
   Alert,
   Dimensions,
   FlatList,
-  Pressable,
   RefreshControl,
   StatusBar,
-  StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import Video from 'react-native-video';
-import axios from 'axios';
-import {baseUrl} from '../../assets/baseUrl';
-import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {faPause} from '@fortawesome/free-solid-svg-icons';
 import {useFocusEffect} from '@react-navigation/native';
+import {style} from './style';
+import VideoItem from '../../components/VideoItem/VideoItem';
+import TiktokAPI from '../../api/TiktokAPI';
 
-const {height, width} = Dimensions.get('window');
+const {height} = Dimensions.get('window');
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentPlayingId, setCurrentPlayingId] = useState(null);
-
-  const tabBarHeight = useBottomTabBarHeight();
+  const [nextCursor, setNextCursor] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       StatusBar.setBarStyle('light-content');
-
       return () => setCurrentPlayingId(null);
     }, []),
   );
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(true);
   }, []);
 
-  const fetchVideos = () => {
-    axios
-      .get(`${baseUrl}/videos`)
+  const fetchVideos = (reset = false) => {
+    if (isLoading) {
+      return;
+    }
+    setIsLoading(true);
+
+    let cursorValue = nextCursor;
+    if (reset) {
+      cursorValue = true;
+      setVideos([]);
+    }
+
+    TiktokAPI.get(`/videos?cursor=${cursorValue}`)
       .then(r => {
-        setVideos(r.data);
-        console.log(r.data);
+        if (cursorValue) {
+          setVideos(prevVideos => [...prevVideos, ...r.data.data]);
+          setNextCursor(r.data.next_cursor);
+          console.log('Response data:', r.data);
+        }
       })
       .catch(err => {
         if (err.response) {
@@ -55,7 +61,10 @@ const Home = () => {
           console.log(err.request);
         }
       })
-      .finally(() => setIsRefreshing(false));
+      .finally(() => {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      });
   };
 
   const setCurrentlyPlaying = id => {
@@ -76,7 +85,7 @@ const Home = () => {
   }, []);
 
   const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
+    itemVisiblePercentThreshold: 98,
   };
 
   const viewabilityConfigCallbackPairs = useRef([
@@ -92,121 +101,28 @@ const Home = () => {
         decelerationRate="fast"
         viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
         showsVerticalScrollIndicator={false}
+        onEndReached={() => fetchVideos()}
+        onEndReachedThreshold={0.6}
         data={videos}
         renderItem={({item}) => (
-          <View style={style.videoContentContainer}>
-            <View
-              style={{
-                ...style.detailsContainer,
-                bottom: tabBarHeight + 80,
-              }}>
-              <Text style={{...style.titleText, ...style.shadow}}>
-                {item.title}
-              </Text>
-              {item.description && (
-                <Text style={{...style.descriptionText, ...style.shadow}}>
-                  {item.description}
-                </Text>
-              )}
-            </View>
-            <Pressable
-              onPress={() => setCurrentlyPlaying(item.id)}
-              style={style.video}>
-              <Video
-                source={{uri: item.uri}}
-                onError={e => console.log(e)}
-                paused={item.id !== currentPlayingId}
-                repeat={true}
-                resizeMode={'cover'}
-                style={style.video}
-              />
-              {item.id !== currentPlayingId && (
-                <View style={style.pausedContainer}>
-                  <FontAwesomeIcon
-                    icon={faPause}
-                    size={50}
-                    color={'white'}
-                    style={style.pauseButton}
-                  />
-                </View>
-              )}
-            </Pressable>
-          </View>
+          <VideoItem
+            item={item}
+            setCurrentlyPlaying={setCurrentlyPlaying}
+            currentPlayingId={currentPlayingId}
+          />
         )}
         refreshControl={
           <RefreshControl
             tintColor={'white'}
             refreshing={isRefreshing}
-            onRefresh={() => fetchVideos()}
+            onRefresh={() => {
+              fetchVideos(true);
+            }}
           />
-        }
-        ListEmptyComponent={
-          <View style={style.emptyTextContainer}>
-            <Text style={style.emptyText}>No videos available.</Text>
-          </View>
         }
       />
     </View>
   );
 };
-
-const style = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  videoContentContainer: {
-    height,
-    width,
-  },
-  video: {
-    flex: 1,
-  },
-  detailsContainer: {
-    position: 'absolute',
-    zIndex: 1,
-    left: 20,
-    marginRight: 50,
-  },
-  titleText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 20,
-    paddingBottom: 10,
-  },
-  descriptionText: {
-    color: 'white',
-  },
-  pausedContainer: {
-    position: 'absolute',
-    zIndex: 1,
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pauseButton: {
-    opacity: 0.8,
-  },
-  shadow: {
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  emptyTextContainer: {
-    paddingTop: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: 'white',
-  },
-});
 
 export default Home;
