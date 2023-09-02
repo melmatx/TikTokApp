@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   Button,
+  Keyboard,
   Platform,
+  Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -16,6 +18,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import {baseUrl} from '../../assets/baseUrl';
 import {useFocusEffect} from '@react-navigation/native';
+import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
 
 const Uploader = () => {
   const [title, setTitle] = useState('');
@@ -24,6 +27,8 @@ const Uploader = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Please wait...');
   const [errors, setErrors] = useState({});
+
+  const tabBarHeight = useBottomTabBarHeight();
 
   useFocusEffect(() => {
     StatusBar.setBarStyle('dark-content');
@@ -105,7 +110,9 @@ const Uploader = () => {
 
   return (
     <SafeAreaView style={globalStyles.flexFull}>
-      <View style={style.mainContainer}>
+      <Pressable
+        style={{...style.mainContainer, marginBottom: tabBarHeight}}
+        onPress={() => Keyboard.dismiss()}>
         {isLoading ? (
           <View>
             <ActivityIndicator />
@@ -146,7 +153,7 @@ const Uploader = () => {
             </View>
           </View>
         )}
-      </View>
+      </Pressable>
     </SafeAreaView>
   );
 };
